@@ -1,6 +1,6 @@
 const { sequelize } = require('./dbconnection');
 const { DataTypes } = require("sequelize");
-const User = sequelize.define("user", {
+const User = sequelize.define("users", {
     uuid: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4, // Automatically generate a UUID if not provided
@@ -48,12 +48,12 @@ const User = sequelize.define("user", {
     
 },{
     timestamps: true, // Enables `createdAt` and `updatedAt` automatically
-    createdAt: 'created_at', // Custom column name for `createdAt`
-    updatedAt: 'updated_at', // Custom column name for `updatedAt`
+    createdAt: 'createdAt', // Custom column name for `createdAt`
+    updatedAt: 'updatedAt', // Custom column name for `updatedAt`
   }
 );
 
-User.sync()
+User.sync({ alter: true })
     .then(async () => {
         console.log("User Model synced");
     })

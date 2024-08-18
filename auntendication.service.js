@@ -1,26 +1,37 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('./databaseStructure/user.modal')
-
+const { v4: uuidv4 } = require('uuid'); 
 class jwtAuthendication{
     constructor(){}
     user = []
     refreshTokens = []
 
     async findUser(userData){
-        return await User.findAll({
-          where: {
-            phNo : userData
-          }
-        });
+    try{
+      return await User.findAll({
+        where: {
+          phNo : userData
+        }
+      });
+    }catch{()=>{
+      return 
+    }}
+       
     }
 
     async updateUser(userData){
-      return await User.update(userData,{
-        where: {
-         phNo : userData.phNo
-        }
-      })
+
+      try{
+        return await User.update(userData,{
+          where: {
+           phNo : userData.phNo
+          }
+        })
+      }catch(e){
+        return e
+      }
+      
     }
 
     // async addUser(userCred){
@@ -36,10 +47,24 @@ class jwtAuthendication{
 
 
     async createUser(userCred){
-      return await User.create(userData)
+      console.log(userCred,"usercred")
+      try{
+        userCred.uuid = uuidv4()
+        delete userCred['token']
+        userCred.updatedAt = Date.now()
+        userCred.createdAt =  Date.now()
+       
+        let data = await User.create(userCred)
+        return data
+      }catch(e){
+        console.log(e)
+        return e
+      }
+      
     }
 
     generateAccessToken(user) {
+      console.log(user,"userData")
         return jwt.sign({ phNo: user.phNo }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' });
     }
 

@@ -4,6 +4,7 @@ const user = require('./databaseStructure/user.modal')
 const dotenv = require("dotenv");
 const axios= require("axios");
 const auntendicationService = require("./auntendication.service");
+const { UUIDV4 } = require("sequelize");
 const app = express();
 dotenv.config();
 const auntendicationServiceFile = new auntendicationService();
@@ -25,7 +26,7 @@ app.post("/sendOTP", async (req, res) => {
   for (let index = 1; index < 7; index++) {
     token += Math.floor(Math.random() * 10).toString();
   }
-
+  console.log(token,"tokennn")
   let userDataIndex = OtpToken.findIndex((user) => user.mobileDeviceID == req.body.mobileDeviceID);
 
   if (userDataIndex >= 0) {
@@ -34,7 +35,7 @@ app.post("/sendOTP", async (req, res) => {
       return res.status(200).json({ mobileDeviceID: req.body.mobileDeviceID, limit: 'reached' });
     }
     OtpToken[userDataIndex].count += 1;
-    OtpToken[userDataIndex].token += token;
+    OtpToken[userDataIndex].token = token;
   } else {
     OtpToken.push({
       phNo: req.body.phNo,
@@ -47,12 +48,12 @@ app.post("/sendOTP", async (req, res) => {
   try {
     console.log(accountSid, authToken, req.body.phNo);
     const client = require("twilio")(accountSid, authToken);
-    await client.messages.create({
-      body: "Hello, this is your OTP code: " + token, // Add the message body
-      messagingServiceSid: "MGce4e11f9472ccfc5cd2fc74f24632adf", // Replace with a valid Twilio number
-      to: req.body.phNo,
-      from: "+1 251 320 6256",
-    });
+    // await client.messages.create({
+    //   body: "Hello, this is your OTP code: " + token, // Add the message body
+    //   messagingServiceSid: "MGce4e11f9472ccfc5cd2fc74f24632adf", // Replace with a valid Twilio number
+    //   to: req.body.phNo,
+    //   from: "+1 251 320 6256",
+    // });
 
     // Respond after the Twilio API call is successful
     res.status(200).json({ phNo: req.body.phNo, status: "issued successfully" });
@@ -68,31 +69,25 @@ app.post("/authendicate",async(req, res) => {
 
   try{
     let userdata = OtpToken.findIndex((user) => user.phNo == req.body.phNo);
-    console.log(userdata,"userDAta")
     if (userdata >= 0) {
-      if (OtpToken[userdata].token == req.body.token) {
-        let newUser
+      let newUser
+      if (OtpToken[userdata].token == req.body.token ) {    
         let checkExistingUser = await auntendicationServiceFile.findUser(
-          userCred.phNo
+          req.body.phNo
         );
-        console.log(checkExistingUser,"checkExistingUser")
-        if(checkExistingUser.length == 0){
-          console.log(checkExistingUser,"checkExistingUser")
+        if(checkExistingUser && checkExistingUser.length == 0 ){
+          console.log("testt")
           newUser = await auntendicationServiceFile.createUser(
-            userCred
+            req.body
           );
-          checkExistingUser = newUser
         }
         OtpToken.splice(0, userdata);
         if(checkExistingUser.length || newUser){
-          console.log("access token generated ")
           let token = await auntendicationServiceFile.generateAccessToken(checkExistingUser)
-          res.status(200).json({ status: "sucess", user: checkExistingUser,token : token });
+          res.status(newUser ? 201 : 200).json({ status: "sucess", user: newUser ? newUser : checkExistingUser[0],token : token });
         }else{
           res.status(500).json({ status :"some thing went wrong" });
-        }
-
-        
+        } 
       
       } else {
         res.status(401).json({ status: "invalid token" });
@@ -100,14 +95,14 @@ app.post("/authendicate",async(req, res) => {
     } else {
       res.status(401).json({ status: "invalid phone number" });
     }
-  }catch{(e)=>{
+  }catch (e){
+    console.log(e,"error")
     res.send(500).json({error : e})
-  }}
+  }
  
 });
 
 app.post("/register", async (req, res) => {
-  this.sendOtp(req, res);
   const userCred = req.body;
   try{
     let checkExistingUser = await auntendicationServiceFile.findUser(
@@ -117,14 +112,19 @@ app.post("/register", async (req, res) => {
       let cred = req.body 
       cred.updatedAt = Date.now()
       let status = await auntendicationServiceFile.updateUser(cred);
-      res.status(200).json(status);
+      if(status[0]){
+        res.status(200).json({status : 'updated sucessfully'});
+      }
+      else{
+        res.status(400).json({status : 'not updated sucessfully'});
+      }
     }else{
-      res.status(201).json({status : "user not found"});
+      res.status(200).json({status : "user not found"});
     }
-  }catch{
-    (e)=>{
+  }catch(e){
+    
       res.send(500).json({error : e})
-    }
+    
   }
   
 });
