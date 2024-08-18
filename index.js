@@ -48,12 +48,12 @@ app.post("/sendOTP", async (req, res) => {
   try {
     console.log(accountSid, authToken, req.body.phNo);
     const client = require("twilio")(accountSid, authToken);
-    // await client.messages.create({
-    //   body: "Hello, this is your OTP code: " + token, // Add the message body
-    //   messagingServiceSid: "MGce4e11f9472ccfc5cd2fc74f24632adf", // Replace with a valid Twilio number
-    //   to: req.body.phNo,
-    //   from: "+1 251 320 6256",
-    // });
+    await client.messages.create({
+      body: "Hello, this is your OTP code: " + token, // Add the message body
+      messagingServiceSid: "MGce4e11f9472ccfc5cd2fc74f24632adf", // Replace with a valid Twilio number
+      to: req.body.phNo,
+      from: "+1 251 320 6256",
+    });
 
     // Respond after the Twilio API call is successful
     res.status(200).json({ phNo: req.body.phNo, status: "issued successfully" });
