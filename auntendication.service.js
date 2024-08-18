@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const User = require('./databaseStructure/user.modal')
 
 class jwtAuthendication{
     constructor(){}
@@ -7,40 +8,47 @@ class jwtAuthendication{
     refreshTokens = []
 
     async findUser(userData){
-        return await this.user.find((userVal)=>(userVal.email == userData))
+        return await User.findAll({
+          where: {
+            phNo : userData
+          }
+        });
     }
 
-    async addUser(userCred){
-        let {email,password} = userCred
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = { email, password: hashedPassword };
-        this.user.push(newUser)
-        return {
-            status :"sucessfully created",
-            users : this.user
+    async updateUser(userData){
+      return await User.update(userData,{
+        where: {
+         phNo : userData.phNo
         }
+      })
+    }
+
+    // async addUser(userCred){
+    //     let {email,password} = userCred
+    //     const hashedPassword = await bcrypt.hash(password, 10);
+    //     const newUser = { email, password: hashedPassword };
+    //     this.user.push(newUser)
+    //     return {
+    //         status :"sucessfully created",
+    //         users : this.user
+    //     }
+    // }
+
+
+    async createUser(userCred){
+      return await User.create(userData)
     }
 
     generateAccessToken(user) {
-        return jwt.sign({ email: user.email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+        return jwt.sign({ phNo: user.phNo }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' });
     }
 
-    async autendicate(userCred,res){
+    async autendicate(userCred){
         try{
-            let {email,password} = userCred
-            let userData = await this.findUser(email)
-            if(!userData){
-                return new Error({status : "wrong cred"})
-            }
-            console.log(userData.password,"userData.password",password,"password")
-            const isPasswordValid = await bcrypt.compare(password, userData.password);
-            console.log(isPasswordValid,"isPasswordValid")
-            if (!isPasswordValid) {
-                return new Error({status :"Invalid Cred"})
-            }
+          
             const accessToken = this.generateAccessToken(userCred);
             console.log(accessToken,"accessToken")
-            const refreshToken = jwt.sign({ email: userCred.email }, process?.env?.REFRESH_TOKEN_SECRET); 
+            const refreshToken = jwt.sign({ phNo: userCred.phNo }, process?.env?.REFRESH_TOKEN_SECRET); 
             this.refreshTokens.push(refreshToken)
             console.log({ accessToken: accessToken,refreshToken : refreshToken, status :200 })        
             return { accessToken: accessToken,refreshToken : refreshToken, status :200 };
