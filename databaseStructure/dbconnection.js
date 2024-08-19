@@ -1,8 +1,6 @@
 const { Sequelize } = require("sequelize");
 const { v4: uuidv4 } = require('uuid'); // Use the correct import for uuid
-const sequelize = new Sequelize('INSP', 'postgres', 'Anbuamma01@', {
-    host: 'localhost',
-    port: 5432,
+const sequelize = new Sequelize(process.env.URL_DB, {
     dialect: 'postgres',
 });
 
