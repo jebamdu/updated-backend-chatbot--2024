@@ -170,7 +170,9 @@ app.post("/token", async (req, res) => {
 });
 
 app.post("/jobAvailability", (req, res) => {
-  let {title} = req.body;
+  console.log("body data",req.body);
+  
+  let {title=""} = req.body;
   let options = {
     "headers": {
       "Accept": "application/json",
