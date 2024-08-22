@@ -169,8 +169,8 @@ app.post("/token", async (req, res) => {
   }
 });
 
-app.post("/jobAvailabbility", (req, res) => {
-  let params = req.body;
+app.post("/jobAvailability", (req, res) => {
+  let {title} = req.body;
   let options = {
     "headers": {
       "Accept": "application/json",
@@ -192,7 +192,7 @@ app.post("/jobAvailabbility", (req, res) => {
     },
   };
   axios.get(
-    "https://www.naukri.com/jobapi/v3/search?noOfResults=20&urlType=search_by_keyword&searchType=adv&keyword=mechanical&pageNo=1&experience=0&k=mechanical&experience=0&seoKey=mechanical-jobs&src=jobsearchDesk&latLong=",
+    `https://www.naukri.com/jobapi/v3/search?noOfResults=20&urlType=search_by_keyword&searchType=adv&keyword=${title}&pageNo=1&experience=0&k=${title}&experience=0&seoKey=${title}-jobs&src=jobsearchDesk&latLong=`,
     options).then((value)=>{
       res.status(200).json(value.data)
     }).catch((e)=>{
