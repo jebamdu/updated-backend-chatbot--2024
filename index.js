@@ -1,13 +1,16 @@
 const express = require("express");
+const dotenv = require("dotenv");
+dotenv.config();
 const {sq,testDbConnection} = require('./databaseStructure/dbconnection')
 const user = require('./databaseStructure/user.modal')
-const dotenv = require("dotenv");
 const axios= require("axios");
+const puppeteer = require("puppeteer");
 const auntendicationService = require("./auntendication.service");
+const linkedinApi = require('./linkedinService')
 const { UUIDV4 } = require("sequelize");
 const app = express();
-dotenv.config();
 const auntendicationServiceFile = new auntendicationService();
+const linkedinApiFile = new linkedinApi();
 const PORT = process.env.PORT ? process.env.PORT : 3000;
 const ACCESS_TOKEN_SECRET =
   process.env.ACCESS_TOKEN_SECRET || "testAccessToken";
@@ -169,7 +172,7 @@ app.post("/token", async (req, res) => {
   }
 });
 
-app.post("/jobAvailability", (req, res) => {
+app.post("/jobAvailability", async (req, res) => {
   console.log("body data",req.body);
   
   let {title=""} = req.body;
@@ -193,13 +196,20 @@ app.post("/jobAvailability", (req, res) => {
       "TE": "trailers",
     },
   };
+  let naukriData = []
   axios.get(
     `https://www.naukri.com/jobapi/v3/search?noOfResults=20&urlType=search_by_keyword&searchType=adv&keyword=${title}&pageNo=1&experience=0&k=${title}&experience=0&seoKey=${title}-jobs&src=jobsearchDesk&latLong=`,
     options).then((value)=>{
-      res.status(200).json(value.data)
+      naukriData = value.data
     }).catch((e)=>{
       res.status(500).json({status :"something went wrong while fetching"})
+      return
     });
+  let linkedInData = await linkedinApiFile.linnkedinService(req.body)
+  return res.status(200).json({
+    linkedInData : linkedInData,
+    naukriData : naukriData
+  })
 });
 
 app.post("/logout", (req, res) => {
