@@ -1,13 +1,26 @@
+const { params } = require("firebase-functions");
 const puppeteer = require("puppeteer");
 class linkedinApi{
-async linnkedinService(prams){
-    try {     
+async linnkedinService(params){
+  console.log(params)
+  let parameters =''
+ 
+  if(params.title ){  
+      parameters = params.title + '-jobs'  
+  }
+  if(params.level){
+    parameters = parameters + '-' + params.level + '-level'
+  }
+  if(params.location){
+    parameters = parameters + '-' + params.location
+  }
+  try {     
         return (async () => {
           const browser = await puppeteer.launch();
           const page = await browser.newPage();    
           try{
             await page.goto(
-              "https://in.linkedin.com/jobs/designer-jobs-kochi?position=1&pageNum=0",
+              "https://in.linkedin.com/jobs/"+parameters+"?position=1&pageNum=0",
               { waitUntil: "networkidle2" }
             );
             console.log("Current page URL:", page.url());

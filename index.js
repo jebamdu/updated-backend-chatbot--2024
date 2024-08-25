@@ -172,10 +172,11 @@ app.post("/token", async (req, res) => {
   }
 });
 
-app.post("/jobAvailability", async (req, res) => {
-  console.log("body data",req.body);
-  
-  let {title=""} = req.body;
+app.post("/jobAvailability", async (req, res) => { 
+  let {title="",location ="",level =""} = req.body;
+  if(!(title && location)){
+    return res.status(400).json({status : "title or location is missing"})
+  }
   let options = {
     "headers": {
       "Accept": "application/json",
