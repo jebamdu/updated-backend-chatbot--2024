@@ -24,8 +24,8 @@ async linnkedinService(params){
         });
           const page = await browser.newPage();    
           await page.authenticate({
-            username: PROXY_USERNAME,
-            password: PROXY_PASSWORD,
+            username: process.env.PROXY_USERNAME,
+            password: process.env.PROXY_PASSWORD,
           });
           try{
             await page.goto(
