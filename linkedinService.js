@@ -16,7 +16,9 @@ class linkedinApi {
     }
     try {
       return (async () => {
-        const browser = await puppeteer.launch(
+        const browser = await puppeteer.launch({
+          executablePath:"/opt/render/.cache/puppeteer/chrome/linux-127.0.6533.119/chrome-linux64/chrome"
+        }
         //   {
         //     ignoreHTTPSErrors: true,
         //     headless:false,
