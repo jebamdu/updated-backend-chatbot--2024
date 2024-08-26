@@ -16,8 +16,17 @@ async linnkedinService(params){
   }
   try {     
         return (async () => {
-          const browser = await puppeteer.launch();
+          const browser = await puppeteer.launch({
+            ignoreHTTPSErrors: true,
+            args: [
+                `--proxy-server=http://${process.env.PROXY_SERVER}:${process.env.PROXY_SERVER_PORT}`
+            ]
+        });
           const page = await browser.newPage();    
+          await page.authenticate({
+            username: PROXY_USERNAME,
+            password: PROXY_PASSWORD,
+          });
           try{
             await page.goto(
               "https://in.linkedin.com/jobs/"+parameters+"?position=1&pageNum=0",
