@@ -17,7 +17,7 @@ class linkedinApi {
     try {
       return (async () => {
         const browser = await puppeteer.launch({
-          executablePath:"/opt/render/.cache/puppeteer/chrome/linux-127.0.6533.119/chrome-linux64/chrome"
+          executablePath:process.env.CHROME_EXECUTABLE
         }
         //   {
         //     ignoreHTTPSErrors: true,
@@ -35,7 +35,7 @@ class linkedinApi {
         // });
         try {
 
-console.log("process.env",process.env);
+// console.log("process.env",process.env);
 
           await page.goto(
             "https://www.linkedin.com",
