@@ -93,12 +93,12 @@ class linkedinApi {
 
 
               const companyImgTag = card.querySelector('img.artdeco-entity-image')
-              const companyImage = companyImgTag.getAttribute('src') || companyImgTag.getAttribute('data-delayed-url') || null
+              const companyImage = companyImgTag?.getAttribute('src') || companyImgTag?.getAttribute('data-delayed-url') || null
               if (companyImage == null) {
                 const companyImage = card.querySelector('img.artdeco-entity-image')?.getAttribute('data-delayed-url') || null;
               }
-              const jobId = card.getAttribute('data-entity-urn').split(':').pop(); // Extract the job ID
-              const applyUrl = card.querySelector('a.base-card__full-link').href;
+              const jobId = card?.getAttribute('data-entity-urn')?.split(':')?.pop(); // Extract the job ID
+              const applyUrl = card?.querySelector('a.base-card__full-link')?.href;
               const postedDate = card
                 .querySelector("time.job-search-card__listdate")?.getAttribute('datetime') || null
 
