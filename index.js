@@ -6,10 +6,12 @@ const user = require('./databaseStructure/user.modal')
 const axios= require("axios");
 const puppeteer = require("puppeteer");
 const auntendicationService = require("./auntendication.service");
+const languageTranslationAPI = require('./languageTranslation.service')
 const linkedinApi = require('./linkedinService')
 const { UUIDV4 } = require("sequelize");
 const app = express();
 const auntendicationServiceFile = new auntendicationService();
+const languageTranslation = new languageTranslationAPI()
 const linkedinApiFile = new linkedinApi();
 const PORT = process.env.PORT ? process.env.PORT : 3000;
 const ACCESS_TOKEN_SECRET =
@@ -22,6 +24,7 @@ app.use(express.json());
 let users = [];
 let refreshTokens = [];
 let OtpToken = [];
+languageTranslation.translateText({text:'नमस्ते माँ, आप कैसी हैं?'})
 //connect db
 testDbConnection()
 app.post("/sendOTP", async (req, res) => {
