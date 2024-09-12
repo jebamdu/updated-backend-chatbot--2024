@@ -1,5 +1,6 @@
-const { params } = require("firebase-functions");
-const puppeteer = require("puppeteer");
+
+
+import puppeteer from "puppeteer";
 class linkedinApi {
   async linnkedinService(params) {
     console.log(params)
@@ -17,17 +18,17 @@ class linkedinApi {
     try {
       return (async () => {
         const browser = await puppeteer.launch({
-          executablePath:process.env.CHROME_EXECUTABLE
+          executablePath: process.env.CHROME_EXECUTABLE
         }
-        //   {
-        //     ignoreHTTPSErrors: true,
-        //     headless:false,
-        //     args: [
-        //         `--proxy-server=http://${process.env.PROXY_SERVER}:${process.env.PROXY_SERVER_PORT}`,
-        //         '--ignore-certificate-errors'
-        //     ]
-        // }
-      );
+          //   {
+          //     ignoreHTTPSErrors: true,
+          //     headless:false,
+          //     args: [
+          //         `--proxy-server=http://${process.env.PROXY_SERVER}:${process.env.PROXY_SERVER_PORT}`,
+          //         '--ignore-certificate-errors'
+          //     ]
+          // }
+        );
         const page = await browser.newPage();
         // await page.authenticate({
         //   username: process.env.PROXY_USERNAME,
@@ -35,7 +36,7 @@ class linkedinApi {
         // });
         try {
 
-// console.log("process.env",process.env);
+          // console.log("process.env",process.env);
 
           await page.goto(
             "https://www.linkedin.com",
@@ -45,7 +46,7 @@ class linkedinApi {
           (await page.waitForSelector("body > nav > ul > li:nth-child(4) > a")).click();
 
           await (await page.waitForSelector("body > div.base-serp-page > header > nav > section > button")).click()
-          
+
           // let searchBar = await page.waitForSelector("#job-search-bar-keywords");
           // console.log(searchBar, "searchbar")
           // await searchBar.type(params.title+" in "+params.location, { delay: 100 });
@@ -64,11 +65,11 @@ class linkedinApi {
 
 
           console.log("Current page URL:", page.url());
-          let pageurl=new URL(page.url());
-          pageurl.searchParams.set("keywords",params.title);
-          pageurl.searchParams.set("location",params.location);
+          let pageurl = new URL(page.url());
+          pageurl.searchParams.set("keywords", params.title);
+          pageurl.searchParams.set("location", params.location);
 
-          console.log("redirect to ",pageurl)
+          console.log("redirect to ", pageurl)
           await page.goto(pageurl);
 
 
@@ -76,7 +77,7 @@ class linkedinApi {
           console.log(basecard, "basecard")
           const jobs = await page.evaluate(() => {
             const jobCards = document.querySelectorAll("div.base-card");
-            const totalJobs=document.querySelector("#main-content > div > h1 > span.results-context-header__job-count").innerText;
+            const totalJobs = document.querySelector("#main-content > div > h1 > span.results-context-header__job-count").innerText;
             // Iterate over each job card and extract details
             const jobsArray = Array.from(jobCards).map((card) => {
               const role =
@@ -121,7 +122,7 @@ class linkedinApi {
               };
             });
 
-            return {jobsArray,totalJobs};
+            return { jobsArray, totalJobs };
           });
           return jobs
 
@@ -134,15 +135,15 @@ class linkedinApi {
           } else {
             console.error('An error occurred:', error);
           }
-          return []
+          return { jobsArray: [], totalJobs: 0 }
         } finally {
           await browser.close();
         }
       })();
     } catch (e) {
       console.log(e);
-      return []
+      return { jobsArray: [], totalJobs: 0 }
     }
   }
 }
-module.exports = linkedinApi
+export default linkedinApi

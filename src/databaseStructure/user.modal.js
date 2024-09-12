@@ -1,5 +1,5 @@
-const { sequelize } = require('./dbconnection');
-const { DataTypes } = require("sequelize");
+import { sequelize } from './dbconnection.js';
+import { DataTypes } from "sequelize";
 const User = sequelize.define("users", {
     uuid: {
         type: DataTypes.UUID,
@@ -7,8 +7,8 @@ const User = sequelize.define("users", {
         primaryKey: true,
         allowNull: false,
     },
-    mobDeviceId:{
-        type : DataTypes.STRING
+    mobDeviceId: {
+        type: DataTypes.STRING
     },
     email: {
         type: DataTypes.STRING,
@@ -45,18 +45,18 @@ const User = sequelize.define("users", {
     gender: {
         type: DataTypes.INTEGER,
     },
-    
-},{
+
+}, {
     timestamps: true, // Enables `createdAt` and `updatedAt` automatically
     createdAt: 'createdAt', // Custom column name for `createdAt`
     updatedAt: 'updatedAt', // Custom column name for `updatedAt`
-  }
+}
 );
 
-User.sync({ alter: true })
-    .then(async () => {
-        console.log("User Model synced");
-    })
-    .catch(err => console.error("Error syncing User model:", err));
+// User.sync({ alter: true })
+//     .then(async () => {
+//         console.log("User Model synced");
+//     })
+//     .catch(err => console.error("Error syncing User model:", err));
 
-module.exports = User;
+export default User;
