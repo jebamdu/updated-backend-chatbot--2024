@@ -34,8 +34,12 @@ export default class RedisStoreAdapter implements StoreAdapter {
     async save(): Promise<boolean> {
         try {
             await this.redisCon.del(this.key);
-            await this.redisCon.lpush(this.key, ...this.messages.map(msg => JSON.stringify(msg)));
+            await this.redisCon.rpush(this.key, ...this.messages.map(msg => JSON.stringify(msg)));
             await this.redisCon.expire(this.key, 86400);
+            console.log("after saving", this.messages.length, this.messages);
+            const localMessages = await this.redisCon.lrange(this.key, 0, -1);
+            console.log("after saving from redis", localMessages.length, localMessages);
+
             return true;
         } catch {
             return false;
