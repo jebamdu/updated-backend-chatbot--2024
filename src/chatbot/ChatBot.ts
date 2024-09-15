@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import StoreAdapter from "./StoreAdapter.ts";
+import StoreAdapter from "./StoreAdapter";
 /**
  * ChatBot(): ChatBot
  * @params API_KEY - to authenticate with server

@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import StoreAdapter from "../chatbot/StoreAdapter.ts";
+import StoreAdapter from "../chatbot/StoreAdapter";
 import Redis from "ioredis";
 // { createClient, Graph, RedisClientType, RedisDefaultModules, RedisFunctions, RedisModules, RedisScripts }
 export default class RedisStoreAdapter implements StoreAdapter {
