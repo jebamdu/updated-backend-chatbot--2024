@@ -1,4 +1,4 @@
-import ajv from "../instances/JSONValidator";
+import ajv from "../instances/JSONValidator.js";
 
 const chatSchema = {
     type: "object",

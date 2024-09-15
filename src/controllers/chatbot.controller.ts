@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import ChatBot from "../chatbot/ChatBot";
-import RedisStoreAdapter from "../adapter/RedisStoreAdapter";
-import redisCon from "../DBConnections/redisConnection";
+import ChatBot from "../chatbot/ChatBot.js";
+import RedisStoreAdapter from "../adapter/RedisStoreAdapter.js";
+import redisCon from "../DBConnections/redisConnection.js";
 
 
 export async function chatbotController(req: Request, res: Response) {

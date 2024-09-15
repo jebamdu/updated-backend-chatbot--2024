@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { chatbotController } from "../controllers/chatbot.controller";
-import chatValidator from "../schema/chatSchema";
-import validatorMiddleware from "../middleware/validatorMiddleware";
-import authNsetUser from "../middleware/authNsetUser";
+import { chatbotController } from "../controllers/chatbot.controller.js";
+import chatValidator from "../schema/chatSchema.js";
+import validatorMiddleware from "../middleware/validatorMiddleware.js";
+import authNsetUser from "../middleware/authNsetUser.js";
 
 const chatRouter = Router();
 

@@ -11,8 +11,8 @@ console.log("hello",process.env.URL_DB)
 import auntendicationService from "./auntendication.service.js"
 import languageTranslationAPI from './languageTranslation.service.js'
 import linkedinApi from './linkedinService.js'
-import chatRouter from "./routes/chatbot.route"
-import swaggerSpec from "./swagger";
+import chatRouter from "./routes/chatbot.route.js"
+import swaggerSpec from "./swagger.js";
 
 
 
