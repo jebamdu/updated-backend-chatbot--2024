@@ -64,7 +64,7 @@ app.use("/user/login", loginRouter)
 
 
 
-
+app.get("/",(req,res)=>res.json({status:"app is running..."}));
 
 
 app.post("/jobAvailability", async (req, res) => {
