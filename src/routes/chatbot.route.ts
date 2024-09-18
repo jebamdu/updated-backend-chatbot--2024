@@ -2,7 +2,6 @@ import { Router } from "express";
 import { chatbotController } from "../controllers/chatbot.controller.js";
 import chatValidator from "../schema/chatSchema.js";
 import validatorMiddleware from "../middleware/validatorMiddleware.js";
-import authNsetUser from "../middleware/authNsetUser.js";
 
 const chatRouter = Router();
 
@@ -61,6 +60,6 @@ const chatRouter = Router();
  *                         type: string
  *        description: Always gives the 200 success
  */
-chatRouter.post('/chat', authNsetUser, validatorMiddleware(chatValidator), chatbotController);
+chatRouter.post('/chat', validatorMiddleware(chatValidator), chatbotController);
 
 export default chatRouter

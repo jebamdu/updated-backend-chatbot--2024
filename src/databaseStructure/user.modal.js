@@ -53,10 +53,10 @@ const User = sequelize.define("users", {
 }
 );
 
-// User.sync({ alter: true })
-//     .then(async () => {
-//         console.log("User Model synced");
-//     })
-//     .catch(err => console.error("Error syncing User model:", err));
+User.sync({ alter: true })
+    .then(async () => {
+        console.log("User Model synced");
+    })
+    .catch(err => console.error("Error syncing User model:", err));
 
 export default User;

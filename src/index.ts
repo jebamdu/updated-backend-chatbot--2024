@@ -4,7 +4,7 @@ import axios from "axios";
 import { exec } from 'child_process';
 import swaggerUi from 'swagger-ui-express'
 dotenv.config();
-console.log("hello",process.env.URL_DB)
+console.log("hello", process.env.URL_DB)
 
 // import { testDbConnection } from './databaseStructure/dbconnection.js'
 
@@ -13,6 +13,10 @@ import languageTranslationAPI from './languageTranslation.service.js'
 import linkedinApi from './linkedinService.js'
 import chatRouter from "./routes/chatbot.route.js"
 import swaggerSpec from "./swagger.js";
+import authNsetUser from "./middleware/authNsetUser.js";
+import redisCon from "./DBConnections/redisConnection.js";
+import loginRouter from "./routes/login.route.js";
+import JWTAuthendication from "./auntendication.service.js";
 
 
 
@@ -21,8 +25,7 @@ const auntendicationServiceFile = new auntendicationService();
 const languageTranslation = new languageTranslationAPI()
 const linkedinApiFile = new linkedinApi();
 const PORT = process.env.PORT ? process.env.PORT : 3000;
-const accountSid = process.env.ACCS_ID;
-const authToken = process.env.AUTHTOKEN;
+
 app.use(express.json());
 
 const swaggerCustomCss = `
@@ -52,163 +55,17 @@ const swaggerUiOptions = {
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
 
-let OtpToken: { count: number, token: string, phNo: string, mobileDeviceID: string }[] = [];
 
 // languageTranslation.translateText({ text: 'नमस्ते माँ, आप कैसी हैं?' })
 //connect db
 // testDbConnection()
 
+app.use("/user/login", loginRouter)
 
-app.post("/sendOTP", async (req, res) => {
-  let token = "";
-  for (let index = 1; index < 7; index++) {
-    token += Math.floor(Math.random() * 10).toString();
-  }
-  console.log(token, "tokennn")
-  let userDataIndex = OtpToken.findIndex((user) => user.mobileDeviceID == req.body.mobileDeviceID);
 
-  if (userDataIndex >= 0) {
-    if (OtpToken[userDataIndex]?.count > 3) {
-      // Respond and return if the limit is reached
-      return res.status(200).json({ mobileDeviceID: req.body.mobileDeviceID, limit: 'reached' });
-    }
-    OtpToken[userDataIndex].count += 1;
-    OtpToken[userDataIndex].token = token;
-  } else {
-    OtpToken.push({
-      phNo: req.body.phNo,
-      mobileDeviceID: req.body.mobileDeviceID,
-      token: token,
-      count: 1
-    });
-  }
 
-  try {
-    console.log(accountSid, authToken, req.body.phNo);
-    const client = require("twilio")(accountSid, authToken);
-    await client.messages.create({
-      body: "Hello, this is your OTP code: " + token, // Add the message body
-      messagingServiceSid: "MGce4e11f9472ccfc5cd2fc74f24632adf", // Replace with a valid Twilio number
-      to: req.body.phNo,
-      from: "+1 251 320 6256",
-    });
 
-    // Respond after the Twilio API call is successful
-    res.status(200).json({ phNo: req.body.phNo, status: "issued successfully" });
 
-  } catch (e) {
-    // Handle errors and respond with 500 status
-    console.log(e, "error");
-    res.status(500).json({ err: "something went wrong" });
-  }
-});
-
-app.post("/authendicate", async (req, res) => {
-
-  try {
-    let userdata = OtpToken.findIndex((user) => user.phNo == req.body.phNo);
-    if (userdata >= 0) {
-      let newUser
-      if (OtpToken[userdata].token == req.body.token) {
-        let checkExistingUser = await auntendicationServiceFile.findUser(
-          req.body.phNo
-        );
-        if (checkExistingUser && checkExistingUser.length == 0) {
-          console.log("testt")
-          newUser = await auntendicationServiceFile.createUser(
-            req.body
-          );
-        }
-        OtpToken.splice(0, userdata);
-        if (checkExistingUser && checkExistingUser.length || newUser) {
-          let token = await auntendicationServiceFile.generateAccessToken(checkExistingUser)
-          let user;
-          if (newUser)
-            user = newUser
-          else if (checkExistingUser)
-            user = checkExistingUser[0]
-          res.status(newUser ? 201 : 200).json({ status: "sucess", user, token: token });
-        } else {
-          res.status(500).json({ status: "some thing went wrong" });
-        }
-
-      } else {
-        res.status(401).json({ status: "invalid token" });
-      }
-    } else {
-      res.status(401).json({ status: "invalid phone number" });
-    }
-  } catch (e) {
-    console.log(e, "error")
-    res.send(500).json({ error: e })
-  }
-
-});
-
-app.post("/register", async (req, res) => {
-  const userCred = req.body;
-  try {
-    let checkExistingUser = await auntendicationServiceFile.findUser(
-      userCred.phNo
-    );
-    if (checkExistingUser && checkExistingUser.length) {
-      let cred = req.body
-      cred.updatedAt = Date.now()
-      let status = await auntendicationServiceFile.updateUser(cred);
-      if (Array.isArray(status) && status[0]) {
-        res.status(200).json({ status: 'updated sucessfully' });
-      }
-      else {
-        res.status(400).json({ status: 'not updated sucessfully' });
-      }
-    } else {
-      res.status(200).json({ status: "user not found" });
-    }
-  } catch (e) {
-
-    res.send(500).json({ error: e })
-
-  }
-
-});
-
-app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-
-  const user = auntendicationServiceFile.findUser(email);
-  if (!user) {
-    return res.status(400).json({ message: "Invalid credentials" });
-  } else {
-    const issueTokenStatus = await auntendicationServiceFile.autendicate(req.body);
-
-    console.log(issueTokenStatus, "issueTokenStatus");
-    if (issueTokenStatus?.status == 200) {
-      let { accessToken, refreshToken } = issueTokenStatus;
-      res.status(200).json({ accessToken, refreshToken });
-      return;
-    }
-    res.status(404).json({ error: "Invalid password" });
-  }
-});
-
-app.post("/token", async (req, res) => {
-  const { token } = req.body;
-
-  if (!token) {
-    return res.sendStatus(401);
-  }
-  if (!auntendicationServiceFile.refreshTokens.includes(token)) {
-    return res.sendStatus(403);
-  }
-  let GenerateAccessCode = await auntendicationServiceFile.refreshAccessToken(
-    token
-  );
-  if (GenerateAccessCode?.status == 403) {
-    return res.sendStatus(403);
-  } else {
-    res.status(200).json(GenerateAccessCode);
-  }
-});
 
 app.post("/jobAvailability", async (req, res) => {
   let { title = "", location = "", level = "" } = req.body;
@@ -264,11 +121,11 @@ app.post("/logout", (req, res) => {
 });
 
 
-app.use("/chatbot", chatRouter);
+app.use("/chatbot", authNsetUser, chatRouter);
 
 app.post(
   "/test",
-  auntendicationServiceFile.authenticateAccessToken,
+  JWTAuthendication.authenticateAccessToken,
   (req, res) => {
     console.log("sucess");
     res.sendStatus(200);

@@ -27,8 +27,8 @@ export default class ChatBot {
         console.log(this.store.messages.length, this.store.messages);
 
         // TODO: this.clearMessages(5); clearGroup of 5 messages
-        if (this.store.messages.length > 7)
-            this.clearMessages(this.store.messages.length - 7);
+        if (this.store.messages.length > 1)
+            this.clearMessages(this.store.messages.length - 1);
         await this.save()
     }
     addTools(tool: OpenAI.ChatCompletionTool) {

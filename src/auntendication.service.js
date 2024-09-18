@@ -1,12 +1,10 @@
 import jwt from 'jsonwebtoken';
 import User from './databaseStructure/user.modal.js'
 import uuidv4 from 'uuidv4';
-export default class jwtAuthendication {
-  constructor() { }
-  user = []
-  refreshTokens = []
+import redisCon from './DBConnections/redisConnection.js';
+export default class JWTAuthendication {
 
-  async findUser(userData) {
+  static async findUser(userData) {
     try {
       return await User.findAll({
         where: {
@@ -21,7 +19,7 @@ export default class jwtAuthendication {
 
   }
 
-  async updateUser(userData) {
+  static async updateUser(userData) {
 
     try {
       return await User.update(userData, {
@@ -47,7 +45,7 @@ export default class jwtAuthendication {
   // }
 
 
-  async createUser(userCred) {
+  static async createUser(userCred) {
     console.log(userCred, "usercred")
     try {
       userCred.uuid = uuidv4()
@@ -64,18 +62,19 @@ export default class jwtAuthendication {
 
   }
 
-  generateAccessToken(user) {
+  static generateAccessToken(user) {
     console.log(user, "userData")
     return jwt.sign({ phNo: user.phNo }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' });
   }
 
-  async autendicate(userCred) {
+  static async autendicate(userCred) {
     try {
 
       const accessToken = this.generateAccessToken(userCred);
       console.log(accessToken, "accessToken")
       const refreshToken = jwt.sign({ phNo: userCred.phNo }, process?.env?.REFRESH_TOKEN_SECRET);
-      this.refreshTokens.push(refreshToken)
+      // this.refreshTokens.push(refreshToken)
+      redisCon.lpush('refreshTokens', refreshToken)
       console.log({ accessToken: accessToken, refreshToken: refreshToken, status: 200 })
       return { accessToken: accessToken, refreshToken: refreshToken, status: 200 };
     } catch {
@@ -88,7 +87,7 @@ export default class jwtAuthendication {
 
   }
 
-  async refreshAccessToken(token) {
+  static async genarateAccessToken(token) {
     return await jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
       if (err) {
         return { status: 403 }
@@ -100,7 +99,7 @@ export default class jwtAuthendication {
   }
 
 
-  async authenticateAccessToken(req, res, next) {
+  static async authenticateAccessToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 

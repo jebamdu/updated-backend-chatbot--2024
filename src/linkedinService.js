@@ -40,7 +40,7 @@ class linkedinApi {
 
           await page.goto(
             "https://www.linkedin.com",
-            { waitUntil: "networkidle2" }
+            { waitUntil: "networkidle0" }
           );
 
           (await page.waitForSelector("body > nav > ul > li:nth-child(4) > a")).click();
