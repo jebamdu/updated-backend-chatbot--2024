@@ -64,48 +64,69 @@ app.use("/user/login", loginRouter)
 
 
 
-app.get("/",(req,res)=>res.json({status:"app is running..."}));
+app.get("/", (req, res) => res.json({ status: "app is running..." }));
 
 
 app.post("/jobAvailability", async (req, res) => {
-  let { title = "", location = "", level = "" } = req.body;
-  if (!(title && location)) {
-    return res.status(400).json({ status: "title or location is missing" })
+  try {
+
+
+    let { title = "", location = "", level = "" } = req.body;
+    if (!(title && location)) {
+      return res.status(400).json({ status: "title or location is missing" })
+    }
+    let options = {
+      "headers": {
+        "Accept": "application/json",
+        "Host": "www.naukri.com",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Accept-Encoding": "gzip, deflate, br",
+        "clientid": "d3skt0p",
+        "appid": 109,
+        "systemid": "Naukri",
+        "Content-Type": " application/json",
+        "gid": "LOCATION,INDUSTRY,EDUCATION,FAREA_ROLE",
+        "Connection": "keep-alive",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
+        "TE": "trailers",
+      },
+    };
+    // let naukriData: any[] = []
+    const scraperResponses = []
+    // const { data: naukriData } = await 
+    scraperResponses.push(axios.get(
+      `https://www.naukri.com/jobapi/v3/search?noOfResults=20&urlType=search_by_keyword&searchType=adv&keyword=${title}&pageNo=1&experience=0&k=${title}&experience=0&seoKey=${title}-jobs&src=jobsearchDesk&latLong=`,
+      options))
+    scraperResponses.push(linkedinApiFile.linnkedinService(req.body))
+    // let linkedInData = await
+    const serviceRes = await Promise.allSettled(scraperResponses)
+    let linkedInData = {}, naukriData = {};
+    for (let i = 0; i < serviceRes.length; i++) {
+      switch (i) {
+        case 0:
+          if (serviceRes[i].status === "fulfilled")
+            naukriData = (serviceRes[i] as any).value.data
+        case 1:
+          if (serviceRes[i].status === "fulfilled")
+            linkedInData = (serviceRes[i] as any).value.data
+          break;
+      }
+    }
+    // console.log(linkedInData, naukriData);
+
+    return res.status(200).json({
+      linkedInData: linkedInData,
+      naukriData: naukriData
+    })
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ status: "something went wrong while fetching" })
+    return
   }
-  let options = {
-    "headers": {
-      "Accept": "application/json",
-      "Host": "www.naukri.com",
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0",
-      "Accept-Language": "en-US,en;q=0.5",
-      "Accept-Encoding": "gzip, deflate, br",
-      "clientid": "d3skt0p",
-      "appid": 109,
-      "systemid": "Naukri",
-      "Content-Type": " application/json",
-      "gid": "LOCATION,INDUSTRY,EDUCATION,FAREA_ROLE",
-      "Connection": "keep-alive",
-      "Sec-Fetch-Dest": "empty",
-      "Sec-Fetch-Mode": "cors",
-      "Sec-Fetch-Site": "same-origin",
-      "TE": "trailers",
-    },
-  };
-  let naukriData: any[] = []
-  axios.get(
-    `https://www.naukri.com/jobapi/v3/search?noOfResults=20&urlType=search_by_keyword&searchType=adv&keyword=${title}&pageNo=1&experience=0&k=${title}&experience=0&seoKey=${title}-jobs&src=jobsearchDesk&latLong=`,
-    options).then((value) => {
-      naukriData = value.data
-    }).catch((e) => {
-      res.status(500).json({ status: "something went wrong while fetching" })
-      return
-    });
-  let linkedInData = await linkedinApiFile.linnkedinService(req.body)
-  return res.status(200).json({
-    linkedInData: linkedInData,
-    naukriData: naukriData
-  })
 });
 
 app.post("/logout", (req, res) => {
